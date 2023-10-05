@@ -46,7 +46,7 @@ def rungeKuttaOrden4(a, b, N, alpha, f):
         time_values.append(t)
         theta_values.append(theta)
         E_values.append(E)
-        T_values.append(T)
+        T_values.append(T) 
         V_values.append(V)
 
     return time_values, theta_values, E_values, T_values, V_values
