@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp
 
 # Parámetros físicos
 g = 9.81
@@ -14,6 +15,12 @@ def f(theta_omega):
     domega_dt = -omega0_squared * np.sin(theta)
     return [dtheta_dt, domega_dt]
 
+def linearized_pendulum(t, state):
+    theta, omega = state
+    omega0_squared = g / l
+    dtheta_dt = omega
+    domega_dt = -omega0_squared * theta
+    return [dtheta_dt, domega_dt]
 
 # Método de Runge-Kutta de orden 4
 def rungeKuttaOrden4(a, b, N, alpha, f):
@@ -110,6 +117,23 @@ for initial_theta in initial_thetas:
 
 fig_traj, axes_traj = plt.subplots(len(initial_thetas), 1, figsize=(10, 8))
 fig_traj.suptitle('Comparison of Pendulum Trajectories (Runge-Kutta vs. Euler)')
+theta0 = 0.1  # Valor inicial de theta
+omega0 = 0.0
+t_span = (0, 10)  # Intervalo de tiempo de 0 a 10 segundos
+t_eval = np.linspace(*t_span, 1000)  # Puntos de evaluación
+
+# Resuelve el sistema de ecuaciones diferenciales
+sol = solve_ivp(linearized_pendulum, t_span, [theta0, omega0], t_eval=t_eval)
+
+# Grafica los resultados
+plt.figure(figsize=(10, 4))
+plt.plot(sol.t, sol.y[0], label='Theta(t)')
+plt.plot(sol.t, sol.y[1], label='Omega(t)')
+plt.xlabel('Tiempo (s)')
+plt.ylabel('Valor')
+plt.legend()
+plt.title('Evolución de Theta y Omega en un péndulo linealizado')
+plt.grid(True)
 
 # Loop through each initial condition
 for i, (initial_theta, label) in enumerate(zip(initial_thetas, theta_labels)):
