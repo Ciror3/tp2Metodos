@@ -21,7 +21,6 @@ def rungeKuttaOrden4(a, b, N, alpha, f):
     t = a
     w = alpha
 
-    # Listas para almacenar los valores de tiempo, ángulo (theta), energía total (E), energía cinética (T) y energía potencial (V)
     time_values = []
     theta_values = []
     E_values = []
@@ -84,62 +83,82 @@ def euler_explicit(a, b, N, alpha, f):
 
     return time_values, theta_values, E_values, T_values, V_values
 
-# Parámetros de la simulación
-a = 0.0       # Tiempo inicial
-b = 10.0      # Tiempo final
-N = 1000      # Número de pasos de tiempo
-alpha = [np.pi / 6, 0]  # Condiciones iniciales: ángulo inicial y velocidad angular inicial
+initial_thetas = [np.pi / 6, np.pi / 4, np.pi / 3]
+theta_labels = [r'$\frac{\pi}{6}$', r'$\frac{\pi}{4}$', r'$\frac{\pi}{3}$']
 
-# Ejecutar el método de Runge-Kutta
-timeR, thetaR, E, T, V = rungeKuttaOrden4(a, b, N, alpha, f)
+# Simulation parameters
+a = 0.0
+b = 10.0
+N = 1000
 
-# Llama a la función euler_explicit
-timeE, thetaE, Ee, Te, Ve = euler_explicit(a, b, N, alpha, f)
+# Store the results for each set of initial conditions
+results_euler = []
+results_rk4 = []
 
-# Graficar las trayectorias de ángulo theta y energía
-plt.figure(figsize=(12, 6))
+for initial_theta in initial_thetas:
+    # Initial conditions for Euler and Runge-Kutta (θ(t = 0) and θ̇(t = 0) = 0)
+    alpha = [initial_theta, 0]
 
-# Trayectoria del ángulo theta para Runge-Kutta
-plt.subplot(2, 1, 1)
-plt.plot(timeR, thetaR, label='Runge-Kutta')
-plt.xlabel('Tiempo (s)')
-plt.ylabel('Ángulo (θ)')
-plt.title('Trayectoria del Péndulo Simple')
-plt.legend()
+    # Solve with Euler
+    timeE, thetaE, Ee, Te, Ve = euler_explicit(a, b, N, alpha, f)
+    results_euler.append((timeE, thetaE, Ee, Te, Ve))
 
-# Trayectoria del ángulo theta para Euler explícito
-plt.subplot(2, 1, 2)
-plt.plot(timeE, thetaE, label='Euler Explícito', color='orange')
-plt.xlabel('Tiempo (s)')
-plt.ylabel('Ángulo (θ)')
-plt.title('Trayectoria del Péndulo Simple')
-plt.legend()
+    # Solve with Runge-Kutta
+    timeR, thetaR, Er, Tr, Vr = rungeKuttaOrden4(a, b, N, alpha, f)
+    results_rk4.append((timeR, thetaR, Er, Tr, Vr))
+
+
+fig_traj, axes_traj = plt.subplots(len(initial_thetas), 1, figsize=(10, 8))
+fig_traj.suptitle('Comparison of Pendulum Trajectories (Runge-Kutta vs. Euler)')
+
+# Loop through each initial condition
+for i, (initial_theta, label) in enumerate(zip(initial_thetas, theta_labels)):
+    # Plot the pendulum trajectory for Runge-Kutta
+    axes_traj[i].plot(results_rk4[i][0], results_rk4[i][1], label=f'Runge-Kutta', color='red')
+
+    # Plot the pendulum trajectory for Euler
+    axes_traj[i].plot(results_euler[i][0], results_euler[i][1], label=f'Euler', color='blue')
+
+    # Set labels and titles for each subplot
+    axes_traj[i].set_xlabel('Time (s)')
+    axes_traj[i].set_ylabel('Angle (θ)')
+    axes_traj[i].set_title(f'Pendulum Trajectory (θ(t=0)={label})')
+    axes_traj[i].legend()
+
+
+
+
+# Create subplots for energy comparison (total, kinetic, and potential) for different initial angles
+fig, axs_energy = plt.subplots(len(initial_thetas), 1, figsize=(10, 8), sharex=True)
+
+# Plot the energy evolution for each initial condition (Runge-Kutta)
+for i, (initial_theta, label) in enumerate(zip(initial_thetas, theta_labels)):
+    # Plot the energy evolution for each initial condition (Euler)
+    axs_energy[i].plot(results_euler[i][0], results_euler[i][3], label=f'Kinetic',color = 'green')
+    axs_energy[i].plot(results_euler[i][0], results_euler[i][2], label=f'Total',color = 'blue')
+    axs_energy[i].plot(results_euler[i][0], results_euler[i][4], label=f'Potential',color = 'orange')
+
+    # Set labels and titles for each energy subplot
+    axs_energy[i].set_ylabel('Energy')
+    axs_energy[i].set_title(f'Energy Comparison (θ(t=0)={label})')
+    axs_energy[i].legend()
+
+fig, axs_energyR = plt.subplots(len(initial_thetas), 1, figsize=(10, 8), sharex=True)
+
+for i, (initial_theta, label) in enumerate(zip(initial_thetas, theta_labels)):
+    axs_energyR[i].plot(results_rk4[i][0], results_rk4[i][3], label=f'Kinetic', color = 'green')
+    axs_energyR[i].plot(results_rk4[i][0], results_rk4[i][2], label=f'Total', color = 'blue')
+    axs_energyR[i].plot(results_rk4[i][0], results_rk4[i][4], label=f'Potential', color = 'orange')
+
+    # Set labels and titles for each energy subplot
+    axs_energyR[i].set_ylabel('Energy')
+    axs_energyR[i].set_title(f'Energy Comparison (θ(t=0)={label})')
+    axs_energyR[i].legend()
+
+# Set a common xlabel for all subplots
+axs_energy[-1].set_xlabel('Time (s)')
 
 plt.tight_layout()
+
+# Show the plots
 plt.show()
-
-# Graficar la evolución de la energía para Runge-Kutta
-plt.figure(figsize=(12, 6))
-
-plt.subplot(2, 1, 1)
-plt.plot(timeR, E, label='Energía Total (E)')
-plt.plot(timeR, T, label='Energía Cinética (T)')
-plt.plot(timeR, V, label='Energía Potencial (V)')
-plt.xlabel('Tiempo (s)')
-plt.ylabel('Energía')
-plt.title('Evolución de la Energía en el Péndulo Simple (Runge-Kutta)')
-plt.legend()
-
-# Graficar la evolución de la energía para Euler explícito
-plt.subplot(2, 1, 2)
-plt.plot(timeE, Ee, label='Energía Total (E)', color='blue')
-plt.plot(timeE, Te, label='Energía Cinética (T)', color='orange')
-plt.plot(timeE, Ve, label='Energía Potencial (V)', color='green')
-plt.xlabel('Tiempo (s)')
-plt.ylabel('Energía')
-plt.title('Evolución de la Energía en el Péndulo Simple (Euler Explícito)')
-plt.legend()
-
-plt.tight_layout()
-plt.show()
-
