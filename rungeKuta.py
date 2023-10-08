@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.integrate import solve_ivp
 
 # Parámetros físicos
 g = 9.81
@@ -15,14 +14,9 @@ def f(theta_omega):
     domega_dt = -omega0_squared * np.sin(theta)
     return [dtheta_dt, domega_dt]
 
-def linearized_pendulum(t, state):
-    theta, omega = state
-    omega0_squared = g / l
-    dtheta_dt = omega
-    domega_dt = -omega0_squared * theta
-    return [dtheta_dt, domega_dt]
+def groundTruth(A, B, omega_0, t):
+    return A * np.cos(omega_0 * t) + B * np.sin(omega_0 * t)
 
-# Método de Runge-Kutta de orden 4
 def rungeKuttaOrden4(a, b, N, alpha, f):
     h = (b - a) / N
     t = a
@@ -90,13 +84,66 @@ def euler_explicit(a, b, N, alpha, f):
 
     return time_values, theta_values, E_values, T_values, V_values
 
-initial_thetas = [np.pi / 6, np.pi / 4, np.pi / 3]
-theta_labels = [r'$\frac{\pi}{6}$', r'$\frac{\pi}{4}$', r'$\frac{\pi}{3}$']
+def calculateTotalEnergy(A, B, omega_0, t):
+    theta_t = groundTruth(A, B, omega_0, t)
+    omega_t = -A * omega_0 * np.sin(omega_0 * t) + B * omega_0 * np.cos(omega_0 * t)
+    T_t = 0.5 * l**2 * omega_t**2
+    V_t = g * l * (1 - np.cos(theta_t))
+    E_t = T_t + V_t
+    return E_t
+
+initial_thetas = [0.1,0.2,0.3,0.4]
+theta_labels = [r'0.1',r'0.2',r'0.3',r'0.4']
 
 # Simulation parameters
 a = 0.0
 b = 10.0
 N = 1000
+
+# Store the results for each set of initial conditions
+results_euler = []
+results_rk4 = []
+results_energy = []  # List to store total energy results
+
+for initial_theta in initial_thetas:
+    # Initial conditions for Euler and Runge-Kutta (θ(t = 0) and θ̇(t = 0) = 0)
+    alpha = [initial_theta, 0]
+
+    # Solve with Euler
+    timeE, thetaE, Ee, Te, Ve = euler_explicit(a, b, N, alpha, f)
+    results_euler.append((timeE, thetaE, Ee, Te, Ve))
+
+    # Solve with Runge-Kutta
+    timeR, thetaR, Er, Tr, Vr = rungeKuttaOrden4(a, b, N, alpha, f)
+    results_rk4.append((timeR, thetaR, Er, Tr, Vr))
+
+    # Calculate total energy using the provided function
+    omega_0 = np.sqrt(g / l)
+    t = np.linspace(a, b, N)
+    A = np.sqrt(initial_theta**2 + (initial_theta * omega_0 / omega_0)**2)
+    B = 0.0
+    E_values = calculateTotalEnergy( A, B, omega_0, t)
+    E_values -= Er
+    results_energy.append((timeE, E_values))
+
+# Plotting the results
+plt.figure(figsize=(12, 8))
+
+for i, initial_theta in enumerate(initial_thetas):
+    # Plot Euler total energy
+    plt.plot(results_euler[i][0], results_euler[i][2], color = "blue", linestyle='--', label=f'Euler (θ0={theta_labels[i]})')
+
+    # Plot Runge-Kutta total energy
+    plt.plot(results_rk4[i][0], results_rk4[i][2], color = "red", linestyle='-.', label=f'Runge-Kutta (θ0={theta_labels[i]})')
+
+    # Plot calculated total energy
+    plt.plot(results_energy[i][0], results_energy[i][1], color = "green", label=f'Calculated Energy (θ0={theta_labels[i]})')
+
+plt.xlabel('Time')
+plt.ylabel('Total Energy')
+plt.legend()
+plt.title('Total Energy vs. Time for Different Initial Angles: Euler vs. Runge-Kutta vs. Calculated Energy')
+plt.show()
 
 # Store the results for each set of initial conditions
 results_euler = []
@@ -114,28 +161,8 @@ for initial_theta in initial_thetas:
     timeR, thetaR, Er, Tr, Vr = rungeKuttaOrden4(a, b, N, alpha, f)
     results_rk4.append((timeR, thetaR, Er, Tr, Vr))
 
+fig, axes_traj = plt.subplots(len(initial_thetas), 1, figsize=(10, 8), sharex=True)
 
-fig_traj, axes_traj = plt.subplots(len(initial_thetas), 1, figsize=(10, 8))
-fig_traj.suptitle('Comparison of Pendulum Trajectories (Runge-Kutta vs. Euler)')
-theta0 = 0.1  # Valor inicial de theta
-omega0 = 0.0
-t_span = (0, 10)  # Intervalo de tiempo de 0 a 10 segundos
-t_eval = np.linspace(*t_span, 1000)  # Puntos de evaluación
-
-# Resuelve el sistema de ecuaciones diferenciales
-sol = solve_ivp(linearized_pendulum, t_span, [theta0, omega0], t_eval=t_eval)
-
-# Grafica los resultados
-plt.figure(figsize=(10, 4))
-plt.plot(sol.t, sol.y[0], label='Theta(t)')
-plt.plot(sol.t, sol.y[1], label='Omega(t)')
-plt.xlabel('Tiempo (s)')
-plt.ylabel('Valor')
-plt.legend()
-plt.title('Evolución de Theta y Omega en un péndulo linealizado')
-plt.grid(True)
-
-# Loop through each initial condition
 for i, (initial_theta, label) in enumerate(zip(initial_thetas, theta_labels)):
     # Plot the pendulum trajectory for Runge-Kutta
     axes_traj[i].plot(results_rk4[i][0], results_rk4[i][1], label=f'Runge-Kutta', color='red')
@@ -185,4 +212,4 @@ axs_energy[-1].set_xlabel('Time (s)')
 plt.tight_layout()
 
 # Show the plots
-plt.show()
+# plt.show()
