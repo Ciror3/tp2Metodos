@@ -92,19 +92,36 @@ def calculateTotalEnergy(A, B, omega_0, t):
     E_t = T_t + V_t
     return E_t
 
-initial_thetas = [0.1,0.2,0.3,0.4]
-theta_labels = [r'0.1',r'0.2',r'0.3',r'0.4']
+initial_thetas = [0.1,0.2,0.3]
+theta_labels = [r'0.1',r'0.2',r'0.3']
 
 # Simulation parameters
 a = 0.0
-b = 10.0
-N = 1000
+b = 5.0
+N = 100
 
 # Store the results for each set of initial conditions
 results_euler = []
 results_rk4 = []
 results_energy = []  # List to store total energy results
+def plotError():
+    plt.figure(figsize=(10, 6))
+    
+    for i in range(len(results_rk4)):
+        errorGroundTruthRK4 = np.abs(results_energy[i][1] - results_rk4[i][2])
+        errorGroundTruthEuler = np.abs(results_energy[i][1] - results_euler[i][2])
 
+        # Calculate the time values for x-axis using (b - a) / N
+        time_values = np.linspace(a, b, N)
+
+        plt.plot(time_values, errorGroundTruthEuler, color = "blue", label=f'Error (θ0={theta_labels[i]}) vs Euler')
+        plt.plot(time_values, errorGroundTruthRK4, color = "red", label=f'Error (θ0={theta_labels[i]}) vs Runge-Kutta')
+
+    plt.xlabel('Time (s)')
+    plt.ylabel('Absolute Error')
+    plt.title('Absolute Error Between Ground Truth and Numerical Methods')
+    plt.legend()
+    plt.grid(True)
 for initial_theta in initial_thetas:
     # Initial conditions for Euler and Runge-Kutta (θ(t = 0) and θ̇(t = 0) = 0)
     alpha = [initial_theta, 0]
@@ -126,6 +143,7 @@ for initial_theta in initial_thetas:
     E_values -= Er
     results_energy.append((timeE, E_values))
 
+plotError()
 # Plotting the results
 plt.figure(figsize=(12, 8))
 
@@ -185,13 +203,13 @@ fig, axs_energy = plt.subplots(len(initial_thetas), 1, figsize=(10, 8), sharex=T
 # Plot the energy evolution for each initial condition (Runge-Kutta)
 for i, (initial_theta, label) in enumerate(zip(initial_thetas, theta_labels)):
     # Plot the energy evolution for each initial condition (Euler)
-    axs_energy[i].plot(results_euler[i][0], results_euler[i][3], label=f'Kinetic',color = 'green')
+    axs_energy[i].plot(results_euler[i][0], results_euler[i][3], label=f'Cinetica',color = 'green')
     axs_energy[i].plot(results_euler[i][0], results_euler[i][2], label=f'Total',color = 'blue')
-    axs_energy[i].plot(results_euler[i][0], results_euler[i][4], label=f'Potential',color = 'orange')
+    axs_energy[i].plot(results_euler[i][0], results_euler[i][4], label=f'Potencial',color = 'orange')
 
     # Set labels and titles for each energy subplot
-    axs_energy[i].set_ylabel('Energy')
-    axs_energy[i].set_title(f'Energy Comparison (θ(t=0)={label})')
+    axs_energy[i].set_ylabel('Energia')
+    axs_energy[i].set_title(f'Grafico de Energia potencial, total y cinetica (θ(t=0)={label})')
     axs_energy[i].legend()
 
 fig, axs_energyR = plt.subplots(len(initial_thetas), 1, figsize=(10, 8), sharex=True)
@@ -207,9 +225,9 @@ for i, (initial_theta, label) in enumerate(zip(initial_thetas, theta_labels)):
     axs_energyR[i].legend()
 
 # Set a common xlabel for all subplots
-axs_energy[-1].set_xlabel('Time (s)')
+axs_energy[-1].set_xlabel('Tiempo (s)')
 
 plt.tight_layout()
 
 # Show the plots
-# plt.show()
+plt.show()

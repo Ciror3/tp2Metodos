@@ -47,14 +47,10 @@ A = 5    # Tamaño mínimo de población requerida para sobrevivir
 h = 0.1  # Tamaño del paso
 num_steps = 100  # Número de pasos de tiempo
 
-# Resolución usando el método de Euler
-t_euler, N_euler = euler(fDinamicaPoblacional, N0, r, K, A, h, num_steps)
-
 # Resolución usando el método de Runge-Kutta
 t_rk, N_rk = runge_kutta(fDinamicaPoblacional, N0, r, K, A, h, num_steps)
 
 plt.figure(figsize=(10, 4))
-plt.plot(t_euler, N_euler, label='Euler')
 plt.plot(t_rk, N_rk, label='Runge-Kutta')
 
 plt.xlabel('Tiempo')
